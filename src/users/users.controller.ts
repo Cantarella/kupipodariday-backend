@@ -11,7 +11,7 @@ import {
   UseGuards,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthGuard } from '../auth/auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-guard.service';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FindUserDto } from './dto/find-user.dto';
@@ -31,7 +31,7 @@ export class UsersController {
     return this.usersService.findOne(+id);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
     @Req() req,
@@ -39,7 +39,7 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     const authorizedUser = req.user;
-    if (authorizedUser.sub !== parseInt(id)) {
+    if (authorizedUser.userId !== parseInt(id)) {
       throw new UnauthorizedException(
         'Можно редактировать только свой профиль',
       );

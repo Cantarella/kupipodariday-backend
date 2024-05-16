@@ -7,7 +7,7 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { AuthGuard } from '../auth/auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-guard.service';
 import { WishService } from '../wish/wish.service';
 import { OffersService } from './offers.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
@@ -19,14 +19,14 @@ export class OffersController {
     private readonly wishService: WishService,
   ) {}
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post(':wishId')
   async create(
     @Req() req,
     @Param('wishId') wishId: number,
     @Body() createOfferDto: CreateOfferDto,
   ) {
-    const authorizedUserId = req.user.sub;
+    const { userId: authorizedUserId } = req.user;
     const wish = await this.wishService.findOneWithOwner(wishId);
     await this.offersService.creationAllowed(wish, authorizedUserId);
     createOfferDto.user = authorizedUserId;

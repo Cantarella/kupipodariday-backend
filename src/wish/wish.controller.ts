@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
   Req,
 } from '@nestjs/common';
-import { AuthGuard } from '../auth/auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-guard.service';
 import { WishService } from './wish.service';
 import { CreateWishDto } from './dto/create-wish.dto';
 import { UpdateWishDto } from './dto/update-wish.dto';
@@ -19,10 +19,10 @@ import { UpdateWishDto } from './dto/update-wish.dto';
 export class WishController {
   constructor(private readonly wishService: WishService) {}
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Req() req, @Body() createWishDto: CreateWishDto) {
-    createWishDto.owner = req.user.sub;
+    createWishDto.owner = req.user.userId;
     return this.wishService.create(createWishDto);
   }
 
@@ -36,7 +36,7 @@ export class WishController {
     return this.wishService.findOne(+id);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(
     @Req() req,
@@ -45,7 +45,7 @@ export class WishController {
   ) {
     const editingAllowed = await this.wishService.isOwner(
       +id,
-      parseInt(req.user.sub),
+      parseInt(req.user.userId),
     );
     if (!editingAllowed) {
       throw new UnauthorizedException(
@@ -58,12 +58,12 @@ export class WishController {
     return this.wishService.update(+id, updateWishDto);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(@Req() req, @Param('id') id: string) {
     const deletingAllowed = await this.wishService.isOwner(
       +id,
-      parseInt(req.user.sub),
+      parseInt(req.user.userId),
     );
     if (!deletingAllowed) {
       throw new UnauthorizedException('Можно удалять только свои желания');

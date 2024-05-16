@@ -10,7 +10,7 @@ import {
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthGuard } from '../auth/auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-guard.service';
 import { WishlistsService } from './wishlists.service';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
@@ -19,10 +19,10 @@ import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 export class WishlistsController {
   constructor(private readonly wishlistsService: WishlistsService) {}
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Req() req, @Body() createWishlistDto: CreateWishlistDto) {
-    createWishlistDto.owner = req.user.sub;
+    createWishlistDto.owner = req.user.userId;
     return this.wishlistsService.create(createWishlistDto);
   }
 
@@ -36,7 +36,7 @@ export class WishlistsController {
     return this.wishlistsService.findOne(+id);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(
     @Req() req,
@@ -45,7 +45,7 @@ export class WishlistsController {
   ) {
     const editingAllowed = await this.wishlistsService.isOwner(
       +id,
-      parseInt(req.user.sub),
+      parseInt(req.user.userId),
     );
     if (!editingAllowed) {
       throw new UnauthorizedException(
@@ -55,12 +55,12 @@ export class WishlistsController {
     return this.wishlistsService.updateOne(+id, updateWishlistDto);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(@Req() req, @Param('id') id: string) {
     const deletingAllowed = await this.wishlistsService.isOwner(
       +id,
-      parseInt(req.user.sub),
+      parseInt(req.user.userId),
     );
     if (!deletingAllowed) {
       throw new UnauthorizedException(
