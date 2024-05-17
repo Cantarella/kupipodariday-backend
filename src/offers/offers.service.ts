@@ -1,13 +1,11 @@
 import {
   Injectable,
-  NotFoundException,
   InternalServerErrorException,
   MethodNotAllowedException,
   HttpException,
 } from '@nestjs/common';
 import { WishService } from '../wish/wish.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
-import { UpdateOfferDto } from './dto/update-offer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Offer } from './entities/offer.entity';

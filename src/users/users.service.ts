@@ -70,7 +70,7 @@ export class UsersService {
     return user.wishes;
   }
 
-  updateOne(
+  async updateOne(
     id: number,
     authorizedUserId: number,
     updateUserDto: UpdateUserDto,
@@ -80,7 +80,16 @@ export class UsersService {
         'Можно редактировать только свой профиль',
       );
     }
-    return this.usersRepository.update(id, updateUserDto);
+    try {
+      const user = await this.usersRepository.update(id, updateUserDto);
+      return user;
+    } catch (err) {
+      if (err.code == '23505') {
+        throw new InternalServerErrorException(
+          'Такой пользователь уже зарегистрирован',
+        );
+      }
+    }
   }
 
   async removeOne(id: number, authorizedUserId: number) {
