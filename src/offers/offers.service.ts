@@ -3,7 +3,9 @@ import {
   NotFoundException,
   InternalServerErrorException,
   MethodNotAllowedException,
+  HttpException,
 } from '@nestjs/common';
+import { WishService } from '../wish/wish.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,13 +19,20 @@ export class OffersService {
     @InjectRepository(Offer)
     private offerRepository: Repository<Offer>,
     private dataSource: DataSource,
+    private readonly wishService: WishService,
   ) {}
-  async create(wish: Wish, createOfferDto: CreateOfferDto): Promise<Offer> {
-    const wishesRepository = this.dataSource.getRepository(Wish);
+  async create(
+    wishId: number,
+    authorizedUserId: number,
+    createOfferDto: CreateOfferDto,
+  ): Promise<Offer> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
+      const wish = await this.wishService.findOneWithOwner(wishId);
+      await this.creationAllowed(wish, authorizedUserId);
+      const wishesRepository = this.dataSource.getRepository(Wish);
       const { amount } = createOfferDto;
       wish.raised += amount;
       await wishesRepository.save(wish);
@@ -32,7 +41,11 @@ export class OffersService {
       return offer;
     } catch (err) {
       await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException('Ошибка создания заявки');
+
+      if (err instanceof HttpException) throw err;
+      throw new InternalServerErrorException(
+        `Ошибка создания заявки: ${err.message}`,
+      );
     } finally {
       await queryRunner.release();
     }
@@ -49,18 +62,6 @@ export class OffersService {
         item: true,
       },
     });
-  }
-
-  updateOne(id: number, updateOfferDto: UpdateOfferDto) {
-    return this.offerRepository.update(id, updateOfferDto);
-  }
-
-  async removeOne(id: number) {
-    const user = await this.offerRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException('Offer с таким id не существует');
-    }
-    return this.offerRepository.delete(id);
   }
 
   async creationAllowed(wish: Wish, authorizedUserId: number) {

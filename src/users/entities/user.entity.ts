@@ -57,12 +57,12 @@ export class User {
   @Column({
     unique: true,
   })
+  @IsNotEmpty()
   @IsString()
   @IsEmail()
-  @IsNotEmpty()
   email: string;
 
-  @Column()
+  @Column({ select: false })
   @IsString()
   @IsNotEmpty()
   password: string;

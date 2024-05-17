@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
@@ -23,11 +27,24 @@ export class WishlistsService {
     return this.wishlistsRepository.findOne({ where: { id } });
   }
 
-  updateOne(id: number, updateWishlistDto: UpdateWishlistDto) {
+  async updateOne(
+    id: number,
+    authorizedUserId: number,
+    updateWishlistDto: UpdateWishlistDto,
+  ) {
+    const editingAllowed = await this.isOwner(+id, authorizedUserId);
+    if (!editingAllowed) {
+      throw new ForbiddenException('Можно редактировать только свои вышлисты');
+    }
     return this.wishlistsRepository.update(id, updateWishlistDto);
   }
 
-  async removeOne(id: number) {
+  async removeOne(id: number, authorizedUserId: number) {
+    const deletingAllowed = await this.isOwner(+id, authorizedUserId);
+    if (!deletingAllowed) {
+      throw new ForbiddenException('Можно удалять только свои списки подарков');
+    }
+
     const user = await this.wishlistsRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('Вышлист с таким id не существует');

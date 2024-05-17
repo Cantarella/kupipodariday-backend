@@ -9,7 +9,6 @@ import {
   Delete,
   ParseIntPipe,
   UseGuards,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-guard.service';
 import { UsersService } from './users.service';
@@ -26,9 +25,18 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  getMyProfile(@Req() req) {
+    const authorizedUser = req.user;
+    return this.usersService.getMyProfile(+authorizedUser.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/wishes')
+  getMyWishes(@Req() req) {
+    const authorizedUser = req.user;
+    return this.usersService.getMyWishes(+authorizedUser.userId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -38,20 +46,25 @@ export class UsersController {
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    const authorizedUser = req.user;
-    if (authorizedUser.userId !== parseInt(id)) {
-      throw new UnauthorizedException(
-        'Можно редактировать только свой профиль',
-      );
-    }
-    return this.usersService.updateOne(+id, updateUserDto);
+    const authorizedUserId = req.user.userId;
+    return this.usersService.updateOne(+id, +authorizedUserId, updateUserDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.removeOne(+id);
+  remove(@Req() req, @Param('id', ParseIntPipe) id: number) {
+    const { userId } = req.user;
+    return this.usersService.removeOne(+id, userId);
   }
 
+  @Get(':userName')
+  findByUserName(@Param('userName') userName: string) {
+    return this.usersService.findByUserName(userName);
+  }
+  @Get(':userName/wishes')
+  findByWishesByUserName(@Param('userName') userName: string) {
+    return this.usersService.findWishesByUserName(userName);
+  }
   @Post('find')
   findMany(@Body() findUserDto: FindUserDto) {
     const { query } = findUserDto;

@@ -72,7 +72,7 @@ export class Wish {
   @IsInt()
   copied: number;
 
-  @ManyToOne(() => User, (user) => user.wishes)
+  @ManyToOne(() => User, (user) => user.wishes, { onDelete: 'CASCADE' })
   owner: User;
 
   @OneToMany(() => Offer, (offer) => offer.item)

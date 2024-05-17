@@ -9,5 +9,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   imports: [ConfigModule, TypeOrmModule.forFeature([Wishlist])],
   controllers: [WishlistsController],
   providers: [WishlistsService, ConfigService],
+  exports: [WishlistsService],
 })
 export class WishlistsModule {}

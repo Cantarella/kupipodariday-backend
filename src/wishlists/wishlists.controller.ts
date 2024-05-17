@@ -8,7 +8,6 @@ import {
   Delete,
   UseGuards,
   Req,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-guard.service';
 import { WishlistsService } from './wishlists.service';
@@ -43,30 +42,14 @@ export class WishlistsController {
     @Param('id') id: string,
     @Body() updateWishlistDto: UpdateWishlistDto,
   ) {
-    const editingAllowed = await this.wishlistsService.isOwner(
-      +id,
-      parseInt(req.user.userId),
-    );
-    if (!editingAllowed) {
-      throw new UnauthorizedException(
-        'Можно редактировать только свои вышлисты',
-      );
-    }
-    return this.wishlistsService.updateOne(+id, updateWishlistDto);
+    const { userId } = req.user;
+    return this.wishlistsService.updateOne(+id, userId, updateWishlistDto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(@Req() req, @Param('id') id: string) {
-    const deletingAllowed = await this.wishlistsService.isOwner(
-      +id,
-      parseInt(req.user.userId),
-    );
-    if (!deletingAllowed) {
-      throw new UnauthorizedException(
-        'Можно удалять только свои списки подарков',
-      );
-    }
-    return this.wishlistsService.removeOne(+id);
+    const { userId } = req.user;
+    return this.wishlistsService.removeOne(+id, userId);
   }
 }

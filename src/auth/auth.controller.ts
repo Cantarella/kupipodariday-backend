@@ -23,7 +23,6 @@ export class AuthController {
     const userDtoWithHiddenPassword =
       await this.authService.hidePassword(createUserDto);
     const user = await this.usersService.create(userDtoWithHiddenPassword);
-
     return this.authService.auth(user);
   }
 }

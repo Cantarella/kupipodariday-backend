@@ -7,8 +7,8 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { JwtAuthGuard } from '../auth/jwt-guard.service';
-import { WishService } from '../wish/wish.service';
 import { OffersService } from './offers.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 
@@ -16,7 +16,7 @@ import { CreateOfferDto } from './dto/create-offer.dto';
 export class OffersController {
   constructor(
     private readonly offersService: OffersService,
-    private readonly wishService: WishService,
+    private dataSource: DataSource,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -27,10 +27,12 @@ export class OffersController {
     @Body() createOfferDto: CreateOfferDto,
   ) {
     const { userId: authorizedUserId } = req.user;
-    const wish = await this.wishService.findOneWithOwner(wishId);
-    await this.offersService.creationAllowed(wish, authorizedUserId);
     createOfferDto.user = authorizedUserId;
-    return this.offersService.create(wish, createOfferDto);
+    return await this.offersService.create(
+      wishId,
+      authorizedUserId,
+      createOfferDto,
+    );
   }
 
   @Get()
